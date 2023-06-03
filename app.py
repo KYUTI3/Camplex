@@ -1,11 +1,16 @@
 from flask import Flask, render_template, request
 import sqlite3
 import requests
-
+from picamera import PiCamera
+import io
+import cv2
+from google.cloud import vision
 
 app = Flask(__name__)
 # path for the image to be tested
 path = "home/pi/Desktop/TEFinalProjectT3/images/"
+service_account_key_file = '/path/to/your/service_account_key.json'
+
 
 def validate_user(email, password):
     print("validating user...")
@@ -147,15 +152,46 @@ def post_user():
 
     return render_template('index.html', user=new_user)
 
-def detect_faces(path):
-    """Detects faces in an image."""
+# def detect_faces(path):
+#     """Detects faces in an image."""
+#     from google.cloud import vision
+#     client = vision.ImageAnnotatorClient()
+
+#     with open(path, 'rb') as image_file:
+#         content = image_file.read()
+
+#     image = vision.Image(content=content)
+
+#     response = client.face_detection(image=image)
+#     faces = response.face_annotations
+
+#     # Names of likelihood from google.cloud.vision.enums
+#     likelihood_name = ('UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE',
+#                        'LIKELY', 'VERY_LIKELY')
+#     print('Faces:')
+
+#     for face in faces:
+#         print(f'anger: {likelihood_name[face.anger_likelihood]}')
+#         print(f'joy: {likelihood_name[face.joy_likelihood]}')
+#         print(f'surprise: {likelihood_name[face.surprise_likelihood]}')
+
+#         vertices = ([f'({vertex.x},{vertex.y})'
+#                     for vertex in face.bounding_poly.vertices])
+
+#         print('face bounds: {}'.format(','.join(vertices)))
+
+#     if response.error.message:
+#         raise Exception(
+#             '{}\nFor more info on error messages, check: '
+#             'https://cloud.google.com/apis/design/errors'.format(
+#                 response.error.message))
+
+def detect_faces_uri(uri):
+    """Detects faces in the file located in Google Cloud Storage or the web."""
     from google.cloud import vision
     client = vision.ImageAnnotatorClient()
-
-    with open(path, 'rb') as image_file:
-        content = image_file.read()
-
-    image = vision.Image(content=content)
+    image = vision.Image()
+    image.source.image_uri = uri
 
     response = client.face_detection(image=image)
     faces = response.face_annotations
@@ -181,5 +217,7 @@ def detect_faces(path):
             'https://cloud.google.com/apis/design/errors'.format(
                 response.error.message))
 
+print(detect_faces_uri("https://www.allprodad.com/wp-content/uploads/2021/03/05-12-21-happy-people.jpg"))
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port='3000')
+
